@@ -133,6 +133,20 @@ class ExtracterApigeeResources():
             record["apiproduct"] = apiproducts
             new_format_apps.append(record)
         return new_format_apps
+    def get_developers(self):
+        response = self.request.get(f"{self.main_url}{self.organization}/developers?expand=true")
+        developers = response.json()["developer"]
+        new_format_developers = []
+        for developer in developers:
+            record = {}
+            record["email"] = developer["email"]
+            apps = []
+            if 'apps' in developer:
+                for app in developer["apps"]:
+                    apps.append(app)
+            record["app"] = apps
+            new_format_developers.append(record)
+        return new_format_developers
     def build_hierarchy(self):
         structure = {}
         organization = self.get_organization()
@@ -144,11 +158,22 @@ class ExtracterApigeeResources():
         structure["proxy"] = self.get_proxies()
         structure["apiproduct"] = self.get_apiproducts()
         structure["app"] = self.get_apps()
+        structure["developers"] = self.get_developers()
         for apiproduct in structure["apiproduct"]: # find depedency between apiproduct and proxy
             for proxy in apiproduct["proxy"]:
                 for prox in structure["proxy"]:
                     if prox["name"] == proxy:
-                       prox["apiproduct"] = proxy
+                       prox["apiproduct"] = apiproduct["name"]
+        for app in structure["app"]: # find depedency between app and apiproduct
+            for apiproduct in app['apiproduct']:
+                for apiprod in structure["apiproduct"]:
+                    if apiprod["name"] == apiproduct:
+                       apiprod["app"] = app["name"]
+        for developer in structure["developers"]: # find depedency between developers and app
+            for app in developer['app']:
+                for App in structure["apps"]:
+                    if App["name"] == app:
+                       App["developer"] = developer["email"]
         with open("hierarchy.json", "w", encoding="utf-8") as hierarchy:
             json.dump(structure, hierarchy, ensure_ascii=False, indent=4)
         return structure
@@ -159,7 +184,7 @@ class ExtracterApigeeResources():
 if __name__ == "__main__":
    start = time.time()
    extracter = ExtracterApigeeResources()
-   data1 = extracter.get_apps()
+   data1 = extracter.get_developers()
    end = time.time()
    print(data1)
    print(f"Length: {len(data1)}")
