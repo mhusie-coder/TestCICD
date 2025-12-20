@@ -100,8 +100,23 @@ class ExtracterApigeeResources():
         sharedflows = []
         response = self.request.get(f"{self.main_url}{self.organization}/sharedflows")
         for sharedflow in response.json()['sharedFlows']:
-            sharedflows.append(sharedflow["name"])
+            record = {}
+            record["name"] = sharedflow["name"]
+            record["revisions"] = {}
+            revisions = self.get_sharedflow_deployments(sharedflow["name"])
+            for revision in revisions:
+                numberRevision = revision["revision"]
+                record["revisions"][f"{numberRevision}"] = {}
+                record["revisions"][f"{numberRevision}"]["environment"] = revision["environment"]
+                record["revisions"][f"{numberRevision}"]["proxy"] = [] 
+            sharedflows.append(record)
         return sharedflows
+    def get_sharedflow_deployments(self, sharedflowName):
+        response = self.request.get(f"{self.main_url}{self.organization}/sharedflows/{sharedflowName}/deployments")
+        if 'deployments' in response.json():
+            return response.json()['deployments']
+        else:
+            return []
     def get_apiproducts(self):
         apiproducts = []
         response = self.request.get(f"{self.main_url}{self.organization}/apiproducts")
@@ -174,6 +189,7 @@ class ExtracterApigeeResources():
                 for App in structure["apps"]:
                     if App["name"] == app:
                        App["developer"] = developer["email"]
+        
         with open("hierarchy.json", "w", encoding="utf-8") as hierarchy:
             json.dump(structure, hierarchy, ensure_ascii=False, indent=4)
         return structure
@@ -184,7 +200,7 @@ class ExtracterApigeeResources():
 if __name__ == "__main__":
    start = time.time()
    extracter = ExtracterApigeeResources()
-   data1 = extracter.get_developers()
+   data1 = extracter.get_sharedflows_list()
    end = time.time()
    print(data1)
    print(f"Length: {len(data1)}")
