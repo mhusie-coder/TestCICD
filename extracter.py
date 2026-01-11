@@ -119,6 +119,29 @@ class ExtracterApigeeResources():
                                 if name_kvm is not None and name_kvm not in kvm:
                                     kvm.append(name_kvm)
         return kvm
+    def get_kvm_dependency_without_policy(self):
+        kvm = [] 
+        with zipfile.ZipFile("temprorary.zip") as archive:
+                print(archive.namelist())
+                list_names = [object for object in archive.namelist() if "sharedflowbundle/policies/" in str(object)]
+                if len(list_names) > 0:
+                    if "sharedflowbundle/policies" in list_names:
+                        list_names.remove("sharedflowbundle/")
+                        list_names.remove("sharedflowbundle/policies/")
+                    policy_list = [str(object).removeprefix("sharedflowbundle/policies/") for object in list_names]
+                    if len(policy_list) > 0:
+                            flowcallout_list = self.filterpolicyByKVM(policy_list)
+                            if len(flowcallout_list) > 0:
+                                print(flowcallout_list)
+                                for flowcallout in flowcallout_list:
+                                        with archive.open("sharedflowbundle/policies/"+flowcallout) as myfile:
+                                            content = myfile.read()
+                                            if len(content) > 0:
+                                                root_element = ET.fromstring(content.decode('utf-8'))
+                                                name_kvm = root_element.get("mapIdentifier")
+                                                if name_kvm is not None and name_kvm not in kvm:
+                                                    kvm.append(name_kvm)
+        return kvm
     def get_proxies(self,includeRevisions=False,includeMetaData=False):
         response = []
         list_all_names_proxy = json.loads(self.request.get(f"{self.main_url}{self.organization}/apis?includeRevisions={includeRevisions}&includeMetaData={includeMetaData}").text)["proxies"] 
@@ -155,14 +178,14 @@ class ExtracterApigeeResources():
         kvms = []
         response = self.request.get(f"{self.main_url}{self.organization}/keyvaluemaps")
         for kvm in response.json():
-            record = {"name": kvm, "proxies": []}
+            record = {"name": kvm, "proxies": [], "sharedflow": []}
             kvms.append(record)
         return kvms
     def get_kvms_environment(self, environment):
         kvms = []
         response = self.request.get(f"{self.main_url}{self.organization}/environments/{environment}/keyvaluemaps")
         for kvm in response.json():
-            record = {"name": kvm, "proxies": []}
+            record = {"name": kvm, "proxies": [], "sharedflow": []}
             kvms.append(record)
         return kvms
     def get_kvms_proxy(self, proxy):
@@ -180,12 +203,17 @@ class ExtracterApigeeResources():
             for revision in revisions:
                 numberRevision = revision["revision"]
                 record["revisions"][f"{numberRevision}"] = {}
+                record["revisions"][f"{numberRevision}"]["kvm"] = self.get_sharedflow_kvm(sharedflow["name"],numberRevision)
                 record["revisions"][f"{numberRevision}"]["environment"] = revision["environment"]
                 record["revisions"][f"{numberRevision}"]["proxy"] = [] 
             sharedflows.append(record)
         print(f"Total sharedflow extracted: {len(sharedflows)}")
         print("sharedflow was done")
         return sharedflows
+    def get_sharedflow_kvm(self, sharedflow, revision):
+        url = f"{self.main_url}{self.organization}/sharedflows/{sharedflow}/revisions/{revision}?format=bundle"
+        self.download_file(url)
+        return self.get_kvm_dependency_without_policy()
     def get_sharedflow_deployments(self, sharedflowName):
         response = self.request.get(f"{self.main_url}{self.organization}/sharedflows/{sharedflowName}/deployments")
         if 'deployments' in response.json():
@@ -276,7 +304,24 @@ class ExtracterApigeeResources():
         structure["app"] = self.get_apps()
         structure["developers"] = self.get_developers()
         print("Start collecting dependencies...")
-        for kvm in structure["organization_kvm"]: # find dependency between kvms organization,environment scope and proxy
+        for kvm in structure["organization_kvm"]: # find dependency between kvms organization and sharedflow
+            for sharedflow in structure["sharedflow"]:
+                for key,value in sharedflow["revisions"].items():
+                    if "kvm" in value:
+                        for KVM in value["kvm"]:
+                            if kvm["name"] == KVM:
+                                if sharedflow["name"] not in kvm["sharedflow"]:
+                                    kvm["sharedflow"].append(sharedflow["name"])
+        for record in structure["environments"]: # find dependency between kvms environment scope and sharedflow
+            for kvm in record["kvm"]:
+                for sharedflow in structure["sharedflow"]:
+                    for key,value in sharedflow["revisions"].items():
+                        if "kvm" in value:
+                            for KVM in value["kvm"]:
+                                if kvm["name"] == KVM:
+                                    if sharedflow["name"] not in kvm["proxies"]:
+                                        kvm["sharedflow"].append(sharedflow["name"])
+        for kvm in structure["organization_kvm"]: # find dependency between kvms organization and proxy
             for proxy in structure["proxy"]:
                 for key,value in proxy["revisions"].items():
                     if "kvms_dependency" in value:
