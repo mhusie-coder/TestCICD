@@ -101,8 +101,8 @@
                 <apigee.profile>test</apigee.profile>
                 <apigee.hosturl>https://apigee.googleapis.com</apigee.hosturl>
                 <apigee.apiversion>v1</apigee.apiversion>
-                <apigee.org>${org}</apigee.org>
-                <apigee.env>${env}</apigee.env>
+                <apigee.org>apigee-test-486509</apigee.org>
+                <apigee.env>test</apigee.env>
                 <apigee.space>${space}</apigee.space> <!-- Apigee space to be used while importing -->
                 <apigee.authtype>oauth</apigee.authtype> <!-- only option -->
                 <apigee.bearer>${bearer}</apigee.bearer> <!-- this takes precedence over service account file -->                
