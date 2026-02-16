@@ -8,7 +8,7 @@ class Auth2Token():
     def __init__(self, path):
         self.path = path # path to private key file
     def generate_jwt_token(self): # method for generating JWT token based on creditionals of service account in order to get access token
-        config = dotenv_values(".env") # load data from env file into dict  
+        config = dotenv_values(".env2") # load data from env file into dict  
         claims = {
             "iss": config["ISS"],
             "scope": config["SCOPE"],
@@ -42,3 +42,8 @@ class Auth2Token():
         access_token_file = open("./.token", "w")
         access_token_file.write(response["access_token"]) # write access token to file
         access_token_file.close()
+if __name__ == "__main__":
+    auth = Auth2Token("key2.pem")
+    auth.generate_new_access_token()
+    print(auth.get_access_token())
+
