@@ -1,14 +1,16 @@
 name: Build and deploy artifacts on Apigee
 on:
     push:
-        branches-ignore:
-            - main
-            - master
-            - 'sharedflow-proxy-plugin/deploy'
-            - 'resources-plugin/deploy'
-            - 'feature/get-access-token'
+         branches:
+            - '**'
 jobs:
     build-and-deploy:
+        if: |
+            github.ref_name != 'main' &&
+            github.ref_name != 'master' &&
+            github.ref_name != 'sharedflow-proxy-plugin/deploy' &&
+            github.ref_name != 'resources-plugin/deploy' &&
+            github.ref_name != 'feature/get-access-token' 
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
