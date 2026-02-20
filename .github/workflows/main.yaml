@@ -1,0 +1,46 @@
+name: Build and deploy artifacts on Apigee
+on:
+    push:
+        branches-ignore:
+            - main
+            - master
+            - 'sharedflow-proxy-plugin/deploy'
+            - 'resources-plugin/deploy'
+            - 'feature/get-access-token'
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: feature/get-access-token
+                  path: get-access-token
+            - uses: actions/checkout@v6
+              with:
+                  ref: master
+                  path: master
+            - uses: actions/checkout@v6
+              with:
+                  ref: sharedflow-proxy-plugin/deploy
+                  path: deploy-sharedflows-proxies
+            - uses: actions/checkout@v6
+              with:
+                  ref: ${{ github.ref_name }}
+                  path: deployed
+            - uses: actions/setup-python@v6
+              with:
+                   python-version: '3.13' 
+                   cache: 'pip'
+            - run: pip install -r ./get-access-token/requirements.txt
+            - name: Run Python script and get oauth2 token
+              id: token
+              run: |
+                VERSION=$(python ./get-access-token/auth2.py)
+                echo "version=$VERSION" >> $GITHUB_OUTPUT
+            - run: chmod +x ./master/script.sh
+            - run: ./master/script.sh 
+              
+            
+
+
+            
