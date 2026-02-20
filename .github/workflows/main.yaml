@@ -1,48 +1,50 @@
-name: Build and deploy artifacts on Apigee
+name: Reusable Apigee Deploy
+
 on:
-    push:
-         branches:
-            - '**'
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+
 jobs:
-    build-and-deploy:
-        if: |
-            github.ref_name != 'main' &&
-            github.ref_name != 'master' &&
-            github.ref_name != 'sharedflow-proxy-plugin/deploy' &&
-            github.ref_name != 'resources-plugin/deploy' &&
-            github.ref_name != 'feature/get-access-token' 
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  ref: feature/get-access-token
-                  path: get-access-token
-            - uses: actions/checkout@v6
-              with:
-                  ref: master
-                  path: master
-            - uses: actions/checkout@v6
-              with:
-                  ref: sharedflow-proxy-plugin/deploy
-                  path: deploy-sharedflows-proxies
-            - uses: actions/checkout@v6
-              with:
-                  ref: ${{ github.ref_name }}
-                  path: deployed
-            - uses: actions/setup-python@v6
-              with:
-                   python-version: '3.13' 
-                   cache: 'pip'
-            - run: pip install -r ./get-access-token/requirements.txt
-            - name: Run Python script and get oauth2 token
-              id: token
-              run: |
-                VERSION=$(python ./get-access-token/auth2.py)
-                echo "version=$VERSION" >> $GITHUB_OUTPUT
-            - run: chmod +x ./master/script.sh
-            - run: ./master/script.sh 
-              
-            
+  deploy:
+    runs-on: ubuntu-latest
 
+    steps:
+      - name: Checkout pushed branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
+          path: deployed
 
-            
+      - name: Checkout master scripts
+        uses: actions/checkout@v6
+        with:
+          ref: master
+          path: master
+
+      - name: Checkout token generator
+        uses: actions/checkout@v6
+        with:
+          ref: feature/get-access-token
+          path: get-access-token
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - run: pip install -r ./get-access-token/requirements.txt
+
+      - name: Get OAuth token
+        id: token
+        run: |
+          TOKEN=$(python ./get-access-token/auth2.py)
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - run: chmod +x ./master/script.sh
+
+      - name: Run deploy
+        run: ./master/script.sh
+        env:
+          APIGEE_TOKEN: ${{ steps.token.outputs.token }}
