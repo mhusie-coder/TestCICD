@@ -8,18 +8,18 @@ class Auth2Token():
     def __init__(self, path):
         self.path = path # path to private key file
     def generate_jwt_token(self): # method for generating JWT token based on creditionals of service account in order to get access token
-        config = dotenv_values(".env2") # load data from env file into dict  
+        # config = dotenv_values(".env2") # load data from env file into dict  
         claims = {
-            "iss": config["ISS"],
-            "scope": config["SCOPE"],
-            "aud": config["AUD"],
+            "iss": os.environ.get("ISS"),
+            "scope": os.environ.get("SCOPE"),
+            "aud": os.environ.get("AUD"),
             "exp": time.time() + 3600,
             "iat": time.time()
         }
         headers = {
-            "alg": config["ALG"],
-            "typ": config["TYPE"], 
-            "kid":config["KID"]
+            "alg": os.environ.get("ALG"),
+            "typ": os.environ.get("TYPE"), 
+            "kid": os.environ.get("KID")
         }
         private_key = open(self.path, "rb")
         content = private_key.read() # read data from file
