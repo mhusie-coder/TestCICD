@@ -1,9 +1,6 @@
 name: Deploy From Any Branch
 
-on:
-  push:
-    branches:
-      - '**'
+on: push
 
 jobs:
   call-deploy:
