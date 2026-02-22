@@ -13,6 +13,6 @@ jobs:
       github.ref_name != 'sharedflow-proxy-plugin/deploy' &&
       github.ref_name != 'resources-plugin/deploy'
 
-    uses: ./.github/workflows/deploy-reusable.yml
+    uses: ./.github/workflows/main.yml
     with:
       branch: ${{ github.ref_name }}
