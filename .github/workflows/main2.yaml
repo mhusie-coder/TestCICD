@@ -8,10 +8,10 @@ on:
 jobs:
   call-deploy:
     if: |
-      github.ref_name != 'main' &&
-      github.ref_name != 'master' &&
-      github.ref_name != 'sharedflow-proxy-plugin/deploy' &&
-      github.ref_name != 'resources-plugin/deploy'
+      github.ref != 'refs/heads/main' &&
+      github.ref != 'refs/heads/master' &&
+      github.ref != 'refs/heads/sharedflow-proxy-plugin/deploy' &&
+      github.ref != 'refs/heads/resources-plugin/deploy'
 
     uses: ./.github/workflows/main.yaml
     with:
