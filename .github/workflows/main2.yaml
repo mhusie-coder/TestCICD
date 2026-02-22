@@ -14,4 +14,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print variable
-        run: echo "${{ github.ref }}"
+        run: echo "${{ github.head_ref }}"
