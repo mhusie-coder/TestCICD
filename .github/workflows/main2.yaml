@@ -11,8 +11,7 @@ jobs:
       github.ref != 'refs/heads/main' &&
       github.ref != 'refs/heads/sharedflow-proxy-plugin/deploy' &&
       github.ref != 'refs/heads/resources-plugin/deploy'
-    -steps:
-      -uses: echo ${{ github.ref }}
-      -uses: ./.github/workflows/main.yaml
-        with:
-          branch: ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print variable
+        run: echo "${{ github.ref }}"
