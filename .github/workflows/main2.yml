@@ -1,11 +1,14 @@
 name: Deploy From Any Branch
 
-on: push
+on:
+ repository_dispatch:
+    types: [branch-pushed]
 
 jobs:
   call-deploy:
     if: |
       github.ref != 'refs/heads/main' &&
+      github.ref != 'refs/heads/master' &&
       github.ref != 'refs/heads/sharedflow-proxy-plugin/deploy' &&
       github.ref != 'refs/heads/resources-plugin/deploy'
     runs-on: ubuntu-latest
